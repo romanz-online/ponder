@@ -110,7 +110,7 @@ class PonderCodeLensProvider implements vscode.CodeLensProvider {
                 const description = result.demo.description || 'Widget Demo';
                 
                 const codeLens = new vscode.CodeLens(range, {
-                    title: `🤔 Ponder: ${description}`,
+                    title: `🤔 Ponder`,
                     command: 'ponderWidget.openDetailedDemo',
                     arguments: [result.demo.detailedUrl],
                     tooltip: result.demo.previewUrl !== result.demo.detailedUrl 

@@ -79,7 +79,7 @@ class PonderCodeLensProvider {
                 const range = new vscode.Range(i, 0, result.endLine, document.lineAt(result.endLine).text.length);
                 const description = result.demo.description || 'Widget Demo';
                 const codeLens = new vscode.CodeLens(range, {
-                    title: `🤔 Ponder: ${description}`,
+                    title: `🤔 Ponder`,
                     command: 'ponderWidget.openDetailedDemo',
                     arguments: [result.demo.detailedUrl],
                     tooltip: result.demo.previewUrl !== result.demo.detailedUrl
@@ -184,7 +184,7 @@ class PonderHoverProvider {
                 markdown.isTrusted = true;
                 markdown.supportHtml = true;
                 const description = result.demo.description || 'Widget Demo';
-                markdown.appendMarkdown(`**🤔 Ponder: ${description}**\n\n`);
+                markdown.appendMarkdown(`**🤔 Ponder**\n\n`);
                 markdown.appendMarkdown(`<img src="${result.demo.previewUrl}" width="${previewSize}" alt="${description} Preview"/>\n\n`);
                 // Show different message based on whether URLs are different
                 if (result.demo.previewUrl !== result.demo.detailedUrl) {
