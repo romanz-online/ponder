@@ -1,0 +1,42 @@
+{
+  "name": "ponder",
+  "displayName": "Ponder",
+  "description": "Ponder widgets to see quick previews and detailed demos",
+  "version": "0.0.2",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": ["Other"],
+  "activationEvents": [
+    "onLanguage:dart"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "ponderWidget.openDetailedDemo",
+        "title": "🤔 Ponder"
+      }
+    ],
+    "configuration": {
+      "title": "Ponder",
+      "properties": {
+        "ponderWidget.hoverPreviewSize": {
+          "type": "number",
+          "default": 200,
+          "description": "Size of hover preview in pixels"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.74.0",
+    "@types/node": "16.x",
+    "typescript": "^4.9.4"
+  }
+}
