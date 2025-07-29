@@ -1,8 +1,8 @@
 {
   "name": "ponder",
   "displayName": "Ponder",
-  "description": "Ponder widgets to see quick previews and detailed demos",
-  "version": "0.0.4",
+  "description": "Ponder widgets to see quick previews",
+  "version": "0.0.10",
   "repository": {
     "type": "git",
     "url": "https://github.com/romanz-online/ponder"

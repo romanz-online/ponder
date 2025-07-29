@@ -5,7 +5,15 @@ const vscode = require("vscode");
 function activate(context) {
     // Register the command for opening detailed demos
     const openDetailedDemoCommand = vscode.commands.registerCommand('ponderWidget.openDetailedDemo', (detailedUrl) => {
-        vscode.env.openExternal(vscode.Uri.parse(detailedUrl));
+        const uri = vscode.Uri.parse(detailedUrl);
+        // If it's a local file URI, open in VS Code
+        if (uri.scheme === 'file') {
+            vscode.commands.executeCommand('vscode.open', uri);
+        }
+        else {
+            // If it's a web URL, open externally
+            vscode.env.openExternal(uri);
+        }
     });
     // Create code lens provider
     const codeLensProvider = new PonderCodeLensProvider();
@@ -19,56 +27,26 @@ exports.activate = activate;
 class PonderCodeLensProvider {
     parsePonderComment(document, startLine) {
         const line = document.lineAt(startLine);
-        // Check for new format: /// @ponder
-        const newFormatMatch = line.text.match(/\/\/\/\s*@ponder\s*$/);
-        if (!newFormatMatch)
-            return { demo: null, endLine: startLine };
-        const demo = {};
-        let currentLine = startLine + 1;
-        const maxLines = Math.min(startLine + 5, document.lineCount); // Check next 4 lines max
-        // Look for /// @preview [link] and /// @detailed [link] in following lines
-        while (currentLine < maxLines) {
-            const nextLine = document.lineAt(currentLine);
-            // Check for @preview
-            const previewMatch = nextLine.text.match(/\/\/\/\s*@preview\s+(.+?)(?:\s|$)/);
-            if (previewMatch) {
-                let previewPath = previewMatch[1].trim();
-                // Convert relative paths to file URIs
-                if (!previewPath.startsWith('http')) {
-                    const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
-                    if (workspaceFolder) {
-                        const fullPath = vscode.Uri.joinPath(workspaceFolder.uri, previewPath);
-                        previewPath = fullPath.toString();
-                    }
+        // Check for single-line format: /// @ponder [path]
+        const singleLineMatch = line.text.match(/\/\/\/\s*@ponder\s+(.+?)(?:\s|$)/);
+        if (singleLineMatch) {
+            let ponderPath = singleLineMatch[1].trim();
+            // Convert relative paths to file URIs
+            if (!ponderPath.startsWith('http')) {
+                const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
+                if (workspaceFolder) {
+                    const fullPath = vscode.Uri.joinPath(workspaceFolder.uri, ponderPath);
+                    ponderPath = fullPath.toString();
                 }
-                demo.previewUrl = previewPath;
-                currentLine++;
-                continue;
             }
-            // Check for @detailed
-            const detailedMatch = nextLine.text.match(/\/\/\/\s*@detailed\s+(.+?)(?:\s|$)/);
-            if (detailedMatch) {
-                demo.detailedUrl = detailedMatch[1].trim();
-                currentLine++;
-                continue;
-            }
-            // If line doesn't match expected format and isn't a comment, stop parsing
-            if (!nextLine.text.match(/^\s*\/\/\//)) {
-                break;
-            }
-            currentLine++;
+            return {
+                demo: {
+                    previewUrl: ponderPath,
+                },
+                endLine: startLine
+            };
         }
-        // Must have at least one URL
-        if (!demo.previewUrl && !demo.detailedUrl)
-            return { demo: null, endLine: startLine };
-        return {
-            demo: {
-                previewUrl: demo.previewUrl || demo.detailedUrl,
-                detailedUrl: demo.detailedUrl || demo.previewUrl,
-                description: demo.description
-            },
-            endLine: currentLine - 1
-        };
+        return { demo: null, endLine: startLine };
     }
     provideCodeLenses(document) {
         const codeLenses = [];
@@ -77,17 +55,14 @@ class PonderCodeLensProvider {
             const result = this.parsePonderComment(document, i);
             if (result.demo) {
                 const range = new vscode.Range(i, 0, result.endLine, document.lineAt(result.endLine).text.length);
-                const description = result.demo.description || 'Widget Demo';
                 const codeLens = new vscode.CodeLens(range, {
                     title: `🤔 Ponder`,
                     command: 'ponderWidget.openDetailedDemo',
-                    arguments: [result.demo.detailedUrl],
-                    tooltip: result.demo.previewUrl !== result.demo.detailedUrl
-                        ? 'Click for detailed demo, hover for quick preview'
-                        : 'Click to view demo, hover for preview'
+                    arguments: [result.demo.previewUrl],
+                    tooltip: 'Click to open demo'
                 });
                 codeLenses.push(codeLens);
-                i = result.endLine + 1; // Skip to after the parsed block
+                i = result.endLine + 1;
             }
             else {
                 i++;
@@ -99,56 +74,26 @@ class PonderCodeLensProvider {
 class PonderHoverProvider {
     parsePonderComment(document, startLine) {
         const line = document.lineAt(startLine);
-        // Check for new format: /// @ponder
-        const newFormatMatch = line.text.match(/\/\/\/\s*@ponder\s*$/);
-        if (!newFormatMatch)
-            return { demo: null, endLine: startLine };
-        const demo = {};
-        let currentLine = startLine + 1;
-        const maxLines = Math.min(startLine + 5, document.lineCount); // Check next 4 lines max
-        // Look for /// @preview [link] and /// @detailed [link] in following lines
-        while (currentLine < maxLines) {
-            const nextLine = document.lineAt(currentLine);
-            // Check for @preview
-            const previewMatch = nextLine.text.match(/\/\/\/\s*@preview\s+(.+?)(?:\s|$)/);
-            if (previewMatch) {
-                let previewPath = previewMatch[1].trim();
-                // Convert relative paths to file URIs
-                if (!previewPath.startsWith('http')) {
-                    const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
-                    if (workspaceFolder) {
-                        const fullPath = vscode.Uri.joinPath(workspaceFolder.uri, previewPath);
-                        previewPath = fullPath.toString();
-                    }
+        // Check for single-line format: /// @ponder [path]
+        const singleLineMatch = line.text.match(/\/\/\/\s*@ponder\s+(.+?)(?:\s|$)/);
+        if (singleLineMatch) {
+            let ponderPath = singleLineMatch[1].trim();
+            // Convert relative paths to file URIs
+            if (!ponderPath.startsWith('http')) {
+                const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
+                if (workspaceFolder) {
+                    const fullPath = vscode.Uri.joinPath(workspaceFolder.uri, ponderPath);
+                    ponderPath = fullPath.toString();
                 }
-                demo.previewUrl = previewPath;
-                currentLine++;
-                continue;
             }
-            // Check for @detailed
-            const detailedMatch = nextLine.text.match(/\/\/\/\s*@detailed\s+(.+?)(?:\s|$)/);
-            if (detailedMatch) {
-                demo.detailedUrl = detailedMatch[1].trim();
-                currentLine++;
-                continue;
-            }
-            // If line doesn't match expected format and isn't a comment, stop parsing
-            if (!nextLine.text.match(/^\s*\/\/\//)) {
-                break;
-            }
-            currentLine++;
+            return {
+                demo: {
+                    previewUrl: ponderPath,
+                },
+                endLine: startLine
+            };
         }
-        // Must have at least one URL
-        if (!demo.previewUrl && !demo.detailedUrl)
-            return { demo: null, endLine: startLine };
-        return {
-            demo: {
-                previewUrl: demo.previewUrl || demo.detailedUrl,
-                detailedUrl: demo.detailedUrl || demo.previewUrl,
-                description: demo.description
-            },
-            endLine: currentLine - 1
-        };
+        return { demo: null, endLine: startLine };
     }
     provideHover(document, position) {
         // Check if current line might be start of a ponder comment block
@@ -169,9 +114,9 @@ class PonderHoverProvider {
             // Check if hover is over any part of the ponder comment block
             let isOverComment = false;
             let hoverRange;
-            // Check for new format
+            // Check for single-line format
             if (position.line >= checkLine && position.line <= result.endLine) {
-                const commentMatch = line.text.match(/\/\/\/\s*@(ponder|preview|detailed)/);
+                const commentMatch = line.text.match(/\/\/\/\s*@ponder/);
                 if (commentMatch) {
                     isOverComment = true;
                     hoverRange = new vscode.Range(checkLine, 0, result.endLine, document.lineAt(result.endLine).text.length);
@@ -183,16 +128,8 @@ class PonderHoverProvider {
                 const markdown = new vscode.MarkdownString();
                 markdown.isTrusted = true;
                 markdown.supportHtml = true;
-                const description = result.demo.description || 'Widget Demo';
                 markdown.appendMarkdown(`**🤔 Ponder**\n\n`);
-                markdown.appendMarkdown(`<img src="${result.demo.previewUrl}" width="${previewSize}" alt="${description} Preview"/>\n\n`);
-                // Show different message based on whether URLs are different
-                if (result.demo.previewUrl !== result.demo.detailedUrl) {
-                    markdown.appendMarkdown(`*Hover for quick preview • Click button for detailed demo*`);
-                }
-                else {
-                    markdown.appendMarkdown(`*Hover for preview • Click button to open demo*`);
-                }
+                markdown.appendMarkdown(`<img src="${result.demo.previewUrl}" width="${previewSize}"/>`);
                 return new vscode.Hover(markdown, hoverRange);
             }
         }
