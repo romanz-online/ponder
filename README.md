@@ -151,10 +151,6 @@ class CustomSlider extends StatelessWidget {
 
 This extension is part of a larger Flutter development toolkit. Contributions and feedback are welcome!
 
-## License
-
-[Add your license information here]
-
 ---
 
 **Enjoy pondering your widgets!** 🤔
